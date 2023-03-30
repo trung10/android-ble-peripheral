@@ -12,12 +12,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -152,7 +153,7 @@ public class CentralRoleActivity extends BluetoothActivity implements View.OnCli
 
         ScanFilter.Builder builder = new ScanFilter.Builder();
         // Comment out the below line to see all BLE devices around you
-        //builder.setServiceUuid(Constants.SERVICE_UUID);
+        builder.setServiceUuid(ParcelUuid.fromString(Constants.HEART_RATE_SERVICE_UUID.toString()));
         scanFilters.add(builder.build());
 
         return scanFilters;

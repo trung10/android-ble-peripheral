@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -17,8 +16,7 @@ import android.os.IBinder;
 import android.util.Log;
 import java.util.List;
 
-import static itan.com.bluetoothle.Constants.BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID;
-import static itan.com.bluetoothle.Constants.HEART_RATE_SERVICE_UUID;
+import static itan.com.bluetoothle.Constants.APP_COMMANDS_UUID;
 
 /**
  * Created by itanbarpeled on 28/01/2018.
@@ -113,7 +111,7 @@ public class CentralService extends Service {
             carried out as per profile specifications:
             http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
          */
-        if (BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
+        if (APP_COMMANDS_UUID.equals(characteristic.getUuid())) {
 
             int flag = characteristic.getProperties();
             int format = -1;

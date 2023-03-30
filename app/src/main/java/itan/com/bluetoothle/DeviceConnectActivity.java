@@ -19,7 +19,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
-import static itan.com.bluetoothle.Constants.BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID;
+import static itan.com.bluetoothle.Constants.APP_COMMANDS_UUID;
 import static itan.com.bluetoothle.Constants.HEART_RATE_SERVICE_UUID;
 import static itan.com.bluetoothle.Constants.SERVER_MSG_FIRST_STATE;
 import static itan.com.bluetoothle.Constants.SERVER_MSG_SECOND_STATE;
@@ -239,7 +239,7 @@ public class DeviceConnectActivity extends BluetoothActivity implements View.OnC
                      */
                     if (serviceCharacteristic.getService().getUuid().equals(HEART_RATE_SERVICE_UUID)) {
 
-                        if (serviceCharacteristic.getUuid().equals(BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID)) {
+                        if (serviceCharacteristic.getUuid().equals(APP_COMMANDS_UUID)) {
                             characteristic = serviceCharacteristic;
                             mCharacteristic = characteristic;
                         }

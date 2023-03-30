@@ -11,17 +11,22 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioGroup;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static itan.com.bluetoothle.Constants.BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID;
+import static itan.com.bluetoothle.Constants.APP_COMMANDS_UUID;
+import static itan.com.bluetoothle.Constants.ERROR_UUID;
+import static itan.com.bluetoothle.Constants.EVENT_UUID;
 import static itan.com.bluetoothle.Constants.HEART_RATE_SERVICE_UUID;
+import static itan.com.bluetoothle.Constants.PCM_COMMANDS_UUID;
 import static itan.com.bluetoothle.Constants.SERVER_MSG_FIRST_STATE;
 import static itan.com.bluetoothle.Constants.SERVER_MSG_SECOND_STATE;
 
@@ -38,7 +43,11 @@ import static itan.com.bluetoothle.Constants.SERVER_MSG_SECOND_STATE;
 public class PeripheralRoleActivity extends BluetoothActivity implements View.OnClickListener {
 
     private BluetoothGattService mSampleService;
-    private BluetoothGattCharacteristic mSampleCharacteristic;
+    private BluetoothGattCharacteristic appCommandCharacteristic;
+    private BluetoothGattCharacteristic eventCharacteristic;
+    private BluetoothGattCharacteristic pcmCharacteristic;
+    private BluetoothGattCharacteristic errorCharacteristic;
+
 
     private BluetoothManager mBluetoothManager;
     private BluetoothGattServer mGattServer;
@@ -47,8 +56,7 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
     private Button mNotifyButton;
     private Switch mEnableAdvertisementSwitch;
     private RadioGroup mCharacteristicValueSwitch;
-
-
+    private TextView textLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +65,8 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
         mNotifyButton = (Button) findViewById(R.id.button_notify);
         mEnableAdvertisementSwitch = (Switch) findViewById(R.id.advertise_switch);
         mCharacteristicValueSwitch = (RadioGroup) findViewById(R.id.color_switch);
-
+        textLog = findViewById(R.id.log);
+        textLog.setMovementMethod(new ScrollingMovementMethod());
 
         mNotifyButton.setOnClickListener(this);
         mEnableAdvertisementSwitch.setOnClickListener(this);
@@ -96,7 +105,6 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
             case R.id.button_notify:
                 notifyCharacteristicChanged();
                 break;
-
         }
     }
 
@@ -146,11 +154,18 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
         we need to grant to the Client permission to read (for when the user clicks the "Request Characteristic" button).
         no need for notify permission as this is an action the Server initiate.
          */
-        mSampleCharacteristic = new BluetoothGattCharacteristic(BODY_SENSOR_LOCATION_CHARACTERISTIC_UUID, BluetoothGattCharacteristic.PROPERTY_NOTIFY | BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ);
+        appCommandCharacteristic = new BluetoothGattCharacteristic(APP_COMMANDS_UUID, BluetoothGattCharacteristic.PROPERTY_NOTIFY | BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ);
+        pcmCharacteristic = new BluetoothGattCharacteristic(PCM_COMMANDS_UUID, BluetoothGattCharacteristic.PROPERTY_NOTIFY | BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ);
+        eventCharacteristic = new BluetoothGattCharacteristic(EVENT_UUID, BluetoothGattCharacteristic.PROPERTY_NOTIFY | BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ);
+        errorCharacteristic = new BluetoothGattCharacteristic(ERROR_UUID, BluetoothGattCharacteristic.PROPERTY_NOTIFY | BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ);
+
         setCharacteristic(); // set initial state
 
         // add the Characteristic to the Service
-        mSampleService.addCharacteristic(mSampleCharacteristic);
+        mSampleService.addCharacteristic(appCommandCharacteristic);
+        mSampleService.addCharacteristic(pcmCharacteristic);
+        mSampleService.addCharacteristic(eventCharacteristic);
+        mSampleService.addCharacteristic(errorCharacteristic);
 
         // add the Service to the Server/Peripheral
         if (mGattServer != null) {
@@ -161,6 +176,9 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
 
     private void setCharacteristic() {
         setCharacteristic(R.id.color_option_1);
+
+        eventCharacteristic.setValue((new PcmEvent(0 ,1000, 0, 100, 3, 100f, 100f, 100f, 100f, 100f, 140f, 90f, 90f)).toByteArray());
+
     }
 
     /*
@@ -173,11 +191,26 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
     https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.body_sensor_location.xml
      */
     private void setCharacteristic(int checkedId) {
+        Log.e("TTTTTTT", "setCharacteristic " + checkedId);
         /*
         done each time the user changes a value of a Characteristic
          */
         int value = checkedId == R.id.color_option_1 ? SERVER_MSG_FIRST_STATE : SERVER_MSG_SECOND_STATE;
-        mSampleCharacteristic.setValue(getValue(value));
+        appCommandCharacteristic.setValue(getValue(value));
+
+        if (checkedId == R.id.color_option_1) {
+            Log.e("TTTTTTT", " R.id.color_option_1");
+            eventCharacteristic.setValue((new PcmEvent(0 ,2000, 0, 100, 0, 100f, 100f, 100f, 100f, 100f, 140f, 90f, 90f)).toByteArray());
+
+        } else if (checkedId == R.id.color_option_2) {
+            Log.e("TTTTTTT", " R.id.color_option_2");
+            eventCharacteristic.setValue((new PcmEvent(0 ,3000, 0, 100, 2, 100f, 100f, 100f, 100f, 100f, 140f, 90f, 90f)).toByteArray());
+
+        } else {
+            Log.e("TTTTTTT", " R.id.color_option_3");
+            eventCharacteristic.setValue((new PcmEvent(0 ,4000, 0, 100, 3, 100f, 100f, 100f, 100f, 100f, 140f, 90f, 90f)).toByteArray());
+
+        }
     }
 
     private byte[] getValue(int value) {
@@ -193,11 +226,13 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
         done when the user clicks the notify button in the app.
         indicate - true for indication (acknowledge) and false for notification (un-acknowledge).
          */
-        boolean indicate = (mSampleCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == BluetoothGattCharacteristic.PROPERTY_INDICATE;
+        boolean indicate = (appCommandCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == BluetoothGattCharacteristic.PROPERTY_INDICATE;
 
         for (BluetoothDevice device : mBluetoothDevices) {
             if (mGattServer != null) {
-                mGattServer.notifyCharacteristicChanged(device, mSampleCharacteristic, indicate);
+                mGattServer.notifyCharacteristicChanged(device, appCommandCharacteristic, indicate);
+                mGattServer.notifyCharacteristicChanged(device, eventCharacteristic, indicate);
+
             }
         }
     }
@@ -225,8 +260,9 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
 
                     mBluetoothDevices.add(device);
 
-                    msg = "Connected to device: " + device.getAddress();
+                    msg = "Connected to device: " + device.getAddress() + " name: " + device.getName();
                     Log.v(MainActivity.TAG, msg);
+                    textLog.append("\n "+ msg);
                     showMsgText(msg);
 
                 } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
@@ -234,6 +270,7 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
                     mBluetoothDevices.remove(device);
 
                     msg = "Disconnected from device";
+                    textLog.append("\n "+ msg);
                     Log.v(MainActivity.TAG, msg);
                     showMsgText(msg);
                 }
@@ -242,6 +279,7 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
                 mBluetoothDevices.remove(device);
 
                 msg = getString(R.string.status_error_when_connecting) + ": " + status;
+                textLog.append("\n "+ msg);
                 Log.e(MainActivity.TAG, msg);
                 showMsgText(msg);
 
@@ -253,6 +291,7 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
         public void onNotificationSent(BluetoothDevice device, int status) {
             super.onNotificationSent(device, status);
             Log.v(MainActivity.TAG, "Notification sent. Status: " + status);
+            textLog.append("\n "+ "Notification sent. Status: " + status);
         }
 
 
@@ -268,6 +307,9 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
             Log.d(MainActivity.TAG, "Device tried to read characteristic: " + characteristic.getUuid());
             Log.d(MainActivity.TAG, "Value: " + Arrays.toString(characteristic.getValue()));
 
+            textLog.append("\n "+ "Device tried to read characteristic: " + characteristic.getUuid());
+            textLog.append("\n "+ "Value: " + Arrays.toString(characteristic.getValue()));
+
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
         }
 
@@ -278,8 +320,9 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
 
             Log.v(MainActivity.TAG, "Characteristic Write request: " + Arrays.toString(value));
+            textLog.append("\n "+ "Characteristic Write request: " + Arrays.toString(value));
 
-            mSampleCharacteristic.setValue(value);
+            appCommandCharacteristic.setValue(value);
 
             if (responseNeeded) {
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value);
@@ -298,6 +341,9 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
 
             Log.d(MainActivity.TAG, "Device tried to read descriptor: " + descriptor.getUuid());
             Log.d(MainActivity.TAG, "Value: " + Arrays.toString(descriptor.getValue()));
+            textLog.append("\n "+ "Device tried to read descriptor: " + descriptor.getUuid());
+            textLog.append("\n "+ "Value: " + Arrays.toString(descriptor.getValue()));
+
 
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, descriptor.getValue());
         }
@@ -311,6 +357,7 @@ public class PeripheralRoleActivity extends BluetoothActivity implements View.On
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
 
             Log.v(MainActivity.TAG, "Descriptor Write Request " + descriptor.getUuid() + " " + Arrays.toString(value));
+            textLog.append("\n " + "Descriptor Write Request " + descriptor.getUuid() + " " + Arrays.toString(value));
 
 //            int status = BluetoothGatt.GATT_SUCCESS;
 //            if (descriptor.getUuid() == CLIENT_CHARACTERISTIC_CONFIGURATION_UUID) {
